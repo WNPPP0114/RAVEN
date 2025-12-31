@@ -2,7 +2,7 @@
 
 **High-Performance Edge Perception System based on RK3588 & Qwen2-VL**
 
-![Platform](https://img.shields.io/badge/Platform-Rockchip%20RK3588-blue) ![OS](https://img.shields.io/badge/OS-Linux%20Embeddded-green) ![Framework](https://img.shields.io/badge/Framework-RKNN%20%7C%20MPP%20%7C%20RGA-orange) ![License](https://img.shields.io/badge/License-MIT-lightgrey)
+![Platform](https://img.shields.io/badge/Platform-Rockchip%20RK3588-blue) ![OS](https://img.shields.io/badge/OS-Linux%20Embeddded-green) ![Framework](https://img.shields.io/badge/Framework-RKNN%20%7C%20MPP%20%7C%20RGA-orange) 
 
 ## 📖 Introduction
 **RAVEN** is a full-stack embedded AI solution designed for the Rockchip RK3588 platform. It integrates a custom-built Linux BSP, a zero-copy hardware acceleration pipeline, and state-of-the-art Visual Language Model (VLM) deployment. 
@@ -94,6 +94,3 @@ RAVEN
 ├── docs/               # Architecture diagrams and performance reports
 └── README.md
 ```
-
-## 📜 License
-This project is licensed under the MIT License.
