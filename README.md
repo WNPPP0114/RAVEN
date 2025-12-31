@@ -1,6 +1,6 @@
 # RAVEN (Rockchip Accelerated Vision Edge Node)
 
-**High-Performance Edge Perception System based on RK3588 & Qwen2-VL**
+**High-Performance Edge Perception System based on RK3588 & Qwen3-VL**
 
 ![Platform](https://img.shields.io/badge/Platform-Rockchip%20RK3588-blue) ![OS](https://img.shields.io/badge/OS-Linux%20Embeddded-green) ![Framework](https://img.shields.io/badge/Framework-RKNN%20%7C%20MPP%20%7C%20RGA-orange) 
 
