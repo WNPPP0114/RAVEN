@@ -1,0 +1,264 @@
+# 1. 更新系统并安装所有编译依赖
+sudo apt update && sudo apt install -y \
+    git-core gnupg flex bison build-essential zip curl \
+    zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 \
+    lib32ncurses5-dev lib32z1-dev lib32stdc++6 \
+    x11proto-core-dev libx11-dev libgl1-mesa-dev libxml2-utils \
+    xsltproc unzip fontconfig python3 python3-pip python3-venv \
+    python3-distutils bc bison ccache curl flex g++-multilib \
+    gcc-multilib git gnupg gperf imagemagick lib32readline-dev \
+    libbz2-dev libc6-dev libcurl4-openssl-dev libelf-dev libffi-dev \
+    libfreetype6-dev liblz4-dev liblzo2-dev libncurses5-dev \
+    libncursesw5-dev libpng-dev libsdl1.2-dev libssl-dev libtinfo5 \
+    libtool libxml2 libxml2-dev lzop m4 ncurses-dev openjdk-17-jdk \
+    patch pkg-config rsync subversion texinfo wget xz-utils zlib1g-dev \
+    libgl1 libgl1-mesa-glx libgl1-mesa-dri
+
+# 2. 配置 ccache（加速重复编译）
+echo 'export USE_CCACHE=1' >> ~/.bashrc
+ccache -M 50G 2>/dev/null || true
+
+# 3. 升级用户级 pip（避免权限问题）
+python3 -m pip install --user --upgrade pip
+
+# 4. 增大 inotify 监视数（防止 repo sync 报错）
+echo 'fs.inotify.max_user_watches=524288' | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+
+# 5. 验证 Java 版本（确保是 OpenJDK 17）
+echo "✅ Java version:"
+java -version 2>&1 | head -n 2
+
+# 6. 提示用户重新加载 shell（可选）
+echo -e "\n🎉 环境配置完成！建议执行：\n   source ~/.bashrc\n或打开新终端以启用 ccache。"
+
+
+
+
+
+注意编译时要退出conda环境：
+conda deactivate
+# 如果还有 (base) 提示，可能需要运行多次，直到 (base) 消失
+
+注意：
+用ubuntu原生版本而非sdk原始版本的编译要先升级sdk的关键包（硬刚 22.04）
+如果你坚持要在本机 Ubuntu 22.04 上编译，那么在重新解压 SDK 之后、运行 build.sh 之前，请先执行以下几个“预处理”步骤。做完这三步，能避开 99% 的坑。
+直接升级 host-fakeroot (最关键)
+这是导致你最后打包失败的元凶。旧版 fakeroot 无法在新 Linux 内核/Glibc 上运行。
+编辑文件：buildroot/package/fakeroot/fakeroot.mk
+修改版本号和环境：
+将：fakeroot.mk改成以下：
+################################################################################
+#
+# fakeroot
+#
+################################################################################
+
+FAKEROOT_VERSION = 1.32.1
+FAKEROOT_SOURCE = fakeroot_$(FAKEROOT_VERSION).orig.tar.gz
+# 你的本地已经有文件了，这个地址用于备份
+FAKEROOT_SITE = https://snapshot.debian.org/archive/debian/20230724T160429Z/pool/main/f/fakeroot
+
+FAKEROOT_AUTORECONF = YES
+
+# 依赖项
+HOST_FAKEROOT_DEPENDENCIES = host-acl host-gettext host-pkgconf
+
+# 禁用 capability
+HOST_FAKEROOT_CONF_ENV = \
+	ac_cv_header_sys_capability_h=no \
+	ac_cv_func_capset=no
+
+FAKEROOT_LICENSE = GPL-3.0+
+FAKEROOT_LICENSE_FILES = COPYING
+
+HOST_FAKEROOT_CONF_ENV += CFLAGS="$(HOST_CFLAGS) -fcommon"
+
+# --- 关键修复开始 ---
+# 定义一个钩子：在打补丁之后、配置之前，强行把 configure.ac 里的 2.71 改成 2.69
+# 这样旧版 Buildroot 的 Autoconf 就能通过检查了
+define HOST_FAKEROOT_FIX_AUTOCONF_VERSION
+	$(SED) 's/2\.71/2.69/g' $(@D)/configure.ac
+endef
+
+# 将这个钩子注册到 host-fakeroot 的构建流程中
+HOST_FAKEROOT_POST_PATCH_HOOKS += HOST_FAKEROOT_FIX_AUTOCONF_VERSION
+# --- 关键修复结束 ---
+
+$(eval $(host-autotools-package))
+
+
+
+
+删除旧 Hash：
+rm buildroot/package/fakeroot/fakeroot.hash
+
+旧的补丁文件打在新的 1.32.1 源码上肯定会报错（Apply failed），导致编译停止。
+# 进入 Buildroot 目录
+cd /home/wzp/BSP/rk356x_linux/buildroot
+
+# 删除 fakeroot 目录下的所有补丁文件
+rm -f package/fakeroot/*.patch
+
+# 再次确认清理了旧的编译缓存
+rm -rf output/rockchip_rk356x_recovery/build/host-fakeroot-*
+
+
+#下载fakeroot_1.32.1
+mkdir -p /home/wzp/BSP/rk356x_linux/buildroot/dl
+cd /home/wzp/BSP/rk356x_linux/buildroot/dl
+
+# 使用 Buildroot 官方备份源下载 (速度快且稳定)
+wget https://sources.buildroot.net/fakeroot/fakeroot_1.32.1.orig.tar.gz
+
+
+recovery版本兼容问题：
+
+问题一：
+2025-12-31T21:26:53 >>> host-m4 1.4.18 Building
+Done in 43s  (error code: 2)
+Command exited with non-zero status 2
+you take 0:42.65 to build recovery
+ERROR: Running build_recovery failed!
+ERROR: exit code 2 from line 563:
+/usr/bin/time -f "you take %E to build recovery" $COMMON_DIR/mk-ramdisk.sh recovery.img $RK_CFG_RECOVERY
+
+这是一个非常典型的 Glibc 版本不兼容 问题。
+找到报错的源文件：
+根据你的日志路径，文件应该位于：
+/home/wzp/BSP/rk356x_linux/buildroot/output/rockchip_rk356x_recovery/build/host-m4-1.4.18/lib/c-stack.c
+问题原因：
+请看你文件中的 第 132 行：
+char buffer[SIGSTKSZ];
+这里的 SIGSTKSZ 用来定义一个静态联合体（union）中数组的大小。在以前的 Linux 系统中，SIGSTKSZ 是一个常数（通常是 8192）。但在较新的 Ubuntu（如 22.04+）中，SIGSTKSZ 变成了一个运行时变量（sysconf 调用），导致编译器报错：“无法在文件作用域使用变长数组”。
+
+解决方法：
+#ifndef SIGSTKSZ
+# define SIGSTKSZ 16384
+#elif HAVE_LIBSIGSEGV && SIGSTKSZ < 16384
+/* libsigsegv 2.6 through 2.8 have a bug where some architectures use
+   more than the Linux default of an 8k alternate stack when deciding
+   if a fault was caused by stack overflow.  */
+# undef SIGSTKSZ
+# define SIGSTKSZ 16384
+#endif
+
+改成：
+
+#if ! HAVE_STACK_T && ! defined stack_t
+typedef struct sigaltstack stack_t;
+#endif
+
+/* 修复 host-m4 在新版 glibc 编译报错的问题 */
+#ifdef SIGSTKSZ
+# undef SIGSTKSZ
+#endif
+#define SIGSTKSZ 16384
+
+#include <stdlib.h>
+#include <string.h>
+
+4. 保存并重新编译
+保存文件后，回到终端，直接再次运行编译命令即可（不需要 clean，直接继续编译）：
+./build.sh recovery
+
+
+问题二：
+2025-12-31T22:05:15 >>> host-fakeroot 1.20.2 Building
+Done in 14min 34s  (error code: 2)
+Command exited with non-zero status 2
+you take 14:34.59 to build recovery
+ERROR: Running build_recovery failed!
+ERROR: exit code 2 from line 563:
+/usr/bin/time -f "you take %E to build recovery" $COMMON_DIR/mk-ramdisk.sh recovery.img $RK_CFG_RECOVERY
+
+
+问题在于Ubuntu 系统（Host）使用了较新的 Glibc 库，而这个老版本的 fakeroot 源码依赖于一个已经被 Glibc 移除的宏 _STAT_VER。
+你需要修改这个文件，在 第 124 行 左右的位置插入一段补丁代码。
+修改步骤
+1. 打开文件
+文件路径（根据你之前的日志）：
+/home/wzp/BSP/rk356x_linux/buildroot/output/rockchip_rk356x_recovery/build/host-fakeroot-1.20.2/libfakeroot.c
+2. 找到定位点
+请找到 第 124 行 左右的 #include <sys/types.h>。
+原文内容（大约 120-126 行）：
+
+#include <unistd.h>
+#include <dirent.h>
+#include <errno.h>
+#include <sys/types.h>
+#ifdef HAVE_SYS_ACL_H
+#include <sys/acl.h>
+
+改成：
+
+#include <unistd.h>
+#include <dirent.h>
+#include <errno.h>
+#include <sys/types.h>
+
+/* --- FIX START: 修复新版 Ubuntu/Glibc 编译报错 --- */
+#include <sys/stat.h>
+#ifndef _STAT_VER
+ #if defined (__aarch64__)
+  #define _STAT_VER 0
+ #elif defined (__x86_64__)
+  #define _STAT_VER 1
+ #else
+  #define _STAT_VER 3
+ #endif
+#endif
+/* --- FIX END --- */
+
+#ifdef HAVE_SYS_ACL_H
+#include <sys/acl.h>
+#endif /* HAVE_SYS_ACL_H */
+5. 保存并继续编译
+保存文件后，不需要执行 clean 操作，直接回到终端运行编译命令即可，它会接着刚才的地方继续编译：
+
+./build.sh recovery
+
+
+问题三：
+2026-01-01T01:38:39 >>> host-squashfs 3de1687d7432ea9b302c2db9521996f506c140a3 Building
+Done in 37s  (error code: 2)
+Command exited with non-zero status 2
+you take 0:37.52 to build recovery
+ERROR: Running build_recovery failed!
+ERROR: exit code 2 from line 563:
+/usr/bin/time -f "you take %E to build recovery" $COMMON_DIR/mk-ramdisk.sh recovery.img $RK_CFG_RECOVERY
+
+
+cd /home/wzp/BSP/rk356x_linux/buildroot/output/rockchip_rk356x_recovery/build/host-squashfs-3de1687d7432ea9b302c2db9521996f506c140a3/squashfs-tools
+
+Makefile里
+CFLAGS ?= -O2
+CFLAGS += $(EXTRA_CFLAGS) $(INCLUDEDIR) -D_FILE_OFFSET_BITS=64 \
+	-D_LARGEFILE_SOURCE -D_GNU_SOURCE -DCOMP_DEFAULT=\"$(COMP_DEFAULT)\" \
+	-Wall
+将其修改为（添加了一行 CFLAGS += -fcommon）：
+
+CFLAGS ?= -O2
+CFLAGS += -fcommon
+CFLAGS += $(EXTRA_CFLAGS) $(INCLUDEDIR) -D_FILE_OFFSET_BITS=64 \
+	-D_LARGEFILE_SOURCE -D_GNU_SOURCE -DCOMP_DEFAULT=\"$(COMP_DEFAULT)\" \
+	-Wall
+
+mksquashfs.c/unsquashfs.c/acton.c/info.c/process_fragments.c/persudo.c/read_.c/resore.c/sort.c/mksquashfs_info.c/xattr.c：在 #include <sys/types.h> 后添加 #include <sys/sysmacros.h>
+
+
+或者. 进入源码目录
+cd /home/wzp/BSP/rk356x_linux/buildroot/output/rockchip_rk356x_recovery/build/host-squashfs-3de1687d7432ea9b302c2db9521996f506c140a3/squashfs-tools
+2. 核心修复：修改 squashfs_fs.h
+我们在该文件开头插入 #include <sys/sysmacros.h>，这样所有源文件都能生效。
+# 使用 sed 命令一键插入（比手动打开编辑器更稳）
+sed -i '1i#include <sys/sysmacros.h>' squashfs_fs.h
+
+之前改过，但为了确保万无一失，请检查或再次执行：
+# 找到 CFLAGS 并追加 -fcommon
+sed -i 's/CFLAGS ?= -O2/CFLAGS ?= -O2 -fcommon/' Makefile
+(或者可以像之前一样手动打开 Makefile 确认 CFLAGS 里有 -fcommon)
+4. 关键步骤：清理旧的编译中间文件
+因为之前改了很多文件又失败了，可能残留了一些错误的 .o 目标文件。我们需要把它们删掉，触发重新编译（但不要删源码目录）。
+# 删除所有编译生成的 .o 文件和可执行文件
+rm -f *.o mksquashfs unsquashfs

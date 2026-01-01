@@ -1,0 +1,133 @@
+显示行号
+:set number
+
+跳转到制定行数
+输入 行号 + G，例如跳转到第 42 行：
+42G
+
+搜索指定内容
+1. 向前搜索（从当前光标向文件末尾查找）
+按 / 键（进入搜索模式）
+输入要查找的内容（例如 error）
+按 Enter
+/error
+2. 向后搜索（从当前光标向文件开头查找）
+按 ? 键
+输入内容，按 Enter
+?error
+ 3.跳转到下一个/上一个匹配项
+快捷键	作用
+n	跳转到下一个匹配项（方向与上次搜索一致）
+N	跳转到上一个匹配项
+
+
+保存退出
+:wq
+
+删除 (Cut/Delete)
+x：删除光标所在的一个字符。
+dd：删除（剪切）整行。
+ndd：删除向下 n 行（例如 5dd 删除 5 行）。
+dw：删除一个单词。
+复制 (Copy/Yank)
+yy：复制整行。
+nyy：复制向下 n 行（例如 5yy 复制 5 行）。
+yw：复制一个单词。
+选中复制：按 v 进入可视模式，移动光标选中内容，然后按 y 复制。
+粘贴 (Paste)
+p：在光标之后粘贴。
+P (大写)：在光标之前粘贴。
+撤销 (Undo)
+u：撤销上一步操作（如果你误删了，按这个）。
+
+
+
+
+
+由于 Buildroot 的机制是 “先解压源码，再编译”，所以这些文件在刚开始解压 SDK 时是不存在的。
+
+需要采用 “遇到报错 -> 执行对应修复指令 -> 继续编译” 的策略。
+
+这里整理好了你需要的 Sed 一键修复指令。
+
+这些指令分为两组：一组针对 Recovery（rockchip_rk356x_recovery），一组针对 主系统（rockchip_rk3568）。
+
+请注意：必须等到编译报错（源码解压出来后）再执行对应的指令，否则会提示“文件不存在”。
+
+一、 修复 host-m4 (SIGSTKSZ 问题)
+
+报错特征：c-stack.c:55:26: error: missing binary operator before token "("
+
+1. 针对 Recovery 目录
+
+# 替换 c-stack.c 中的代码块
+sed -i '/^#ifndef SIGSTKSZ/,/^#endif/c\/* 修复 host-m4 在新版 glibc 编译报错的问题 */\n#ifdef SIGSTKSZ\n# undef SIGSTKSZ\n#endif\n#define SIGSTKSZ 16384' \
+buildroot/output/rockchip_rk356x_recovery/build/host-m4-1.4.18/lib/c-stack.c
+2. 针对 Buildroot 主系统目录
+
+# 替换 c-stack.c 中的代码块
+sed -i '/^#ifndef SIGSTKSZ/,/^#endif/c\/* 修复 host-m4 在新版 glibc 编译报错的问题 */\n#ifdef SIGSTKSZ\n# undef SIGSTKSZ\n#endif\n#define SIGSTKSZ 16384' \
+buildroot/output/rockchip_rk3568/build/host-m4-1.4.18/lib/c-stack.c
+二、 修复 host-fakeroot (_STAT_VER 问题)
+
+注意：如果你已经按照之前的建议修改了 package/fakeroot/fakeroot.mk 升级到了 1.32.1，则不需要执行此步骤。如果你还在用旧版 1.20.2，则执行以下指令。
+
+报错特征：_STAT_VER 未定义。
+
+1. 针对 Recovery 目录
+
+# 在 #include <sys/types.h> 后面插入修复补丁
+sed -i '/#include <sys\/types.h>/a \/* --- FIX START --- *\/\n#include <sys\/stat.h>\n#ifndef _STAT_VER\n #if defined (__aarch64__)\n  #define _STAT_VER 0\n #elif defined (__x86_64__)\n  #define _STAT_VER 1\n #else\n  #define _STAT_VER 3\n #endif\n#endif\n\/* --- FIX END --- *\/' \
+buildroot/output/rockchip_rk356x_recovery/build/host-fakeroot-1.20.2/libfakeroot.c
+2. 针对 Buildroot 主系统目录
+
+# 在 #include <sys/types.h> 后面插入修复补丁
+sed -i '/#include <sys\/types.h>/a \/* --- FIX START --- *\/\n#include <sys\/stat.h>\n#ifndef _STAT_VER\n #if defined (__aarch64__)\n  #define _STAT_VER 0\n #elif defined (__x86_64__)\n  #define _STAT_VER 1\n #else\n  #define _STAT_VER 3\n #endif\n#endif\n\/* --- FIX END --- *\/' \
+buildroot/output/rockchip_rk3568/build/host-fakeroot-1.20.2/libfakeroot.c
+三、 修复 Makefile/host-squashfs (fcommon & sysmacros 问题)
+
+报错特征：multiple definition 或 sys/types.h 相关错误。
+
+这里我们只修改头文件和Makefile，不需要改那十几个 .c 文件，效果是一样的。
+
+1. 针对 Recovery 目录
+
+# 1. 在头文件 squashfs_fs.h 第一行插入 sysmacros.h
+sed -i '1i#include <sys/sysmacros.h>' \
+buildroot/output/rockchip_rk356x_recovery/build/host-squashfs-*/squashfs-tools/squashfs_fs.h
+
+# 2. 在 Makefile 中添加 -fcommon
+sed -i 's/CFLAGS ?= -O2/CFLAGS ?= -O2 -fcommon/' \
+buildroot/output/rockchip_rk356x_recovery/build/host-squashfs-*/squashfs-tools/Makefile
+
+# 3. 清理旧对象文件（防止链接错误）
+rm -f buildroot/output/rockchip_rk356x_recovery/build/host-squashfs-*/squashfs-tools/*.o
+2. 针对 Buildroot 主系统目录
+
+# 1. 在头文件 squashfs_fs.h 第一行插入 sysmacros.h
+sed -i '1i#include <sys/sysmacros.h>' \
+buildroot/output/rockchip_rk3568/build/host-squashfs-*/squashfs-tools/squashfs_fs.h
+
+# 2. 在 Makefile 中添加 -fcommon
+sed -i 's/CFLAGS ?= -O2/CFLAGS ?= -O2 -fcommon/' \
+buildroot/output/rockchip_rk3568/build/host-squashfs-*/squashfs-tools/Makefile
+
+# 3. 清理旧对象文件
+rm -f buildroot/output/rockchip_rk3568/build/host-squashfs-*/squashfs-tools/*.o
+总结：你的编译流程
+
+运行 ./build.sh recovery
+
+遇到 m4 报错 -> 运行 一.1 的指令 -> 继续编译
+
+遇到 squashfs 报错 -> 运行 三.1 的指令 -> 继续编译
+
+(如果 fakeroot 没升级) 遇到 fakeroot 报错 -> 运行 二.1 的指令 -> 继续编译
+
+运行 ./build.sh buildroot (编译主系统)
+
+遇到 m4 报错 -> 运行 一.2 的指令 -> 继续编译
+
+遇到 squashfs 报错 -> 运行 三.2 的指令 -> 继续编译
+
+(如果 fakeroot 没升级) 遇到 fakeroot 报错 -> 运行 二.2 的指令 -> 继续编译
