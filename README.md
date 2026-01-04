@@ -65,7 +65,7 @@ graph LR
 
 ### Prerequisites
 *   Hardware: RK3588 / RK3588S EVB or Custom Board.
-*   Host: Ubuntu 22.04/24.04 (Cross-compilation environment).
+*   Host: Ubuntu 20.04/22.04 (Cross-compilation environment).
 *   SDK: Rockchip Linux SDK 6.0+ (Support for newer Transformer ops).
 
 ### 1. Build BSP (Optional)
