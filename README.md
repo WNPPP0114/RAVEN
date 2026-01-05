@@ -102,7 +102,7 @@ graph TD
 
 ### Prerequisites
 *   **Hardware**: Rockchip RK3588/RK3588S development board (8GB RAM recommended)
-*   **Host Machine**: Ubuntu 22.04 LTS with Docker (for cross-compilation)
+*   **Host Machine**: Ubuntu 22.04/24.04 LTS with Docker (for cross-compilation)
 *   **SDK**: Rockchip Linux SDK 5.10 (with RKNN Toolkit2 and MPP 1.5+)
 
 ### 1. System Setup
