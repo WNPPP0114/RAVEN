@@ -1,0 +1,40 @@
+# 虚拟机连接开发板（目录注意改成自己的）
+# 定义路径 (保持不变)
+LIB_PATH="/home/wzp/RKNN/rknn-toolkit2-master/rknpu2/runtime/Linux/librknn_api/aarch64/librknnrt.so"
+SERVER_PATH="/home/wzp/RKNN/rknn-toolkit2-master/rknpu2/runtime/Linux/rknn_server/aarch64/usr/bin/rknn_server"
+
+echo "正在等待设备连接..."
+adb wait-for-device
+adb root
+# 给一点时间让 adb server 重启
+sleep 2
+adb remount
+
+echo "1. 推送文件到临时目录..."
+adb push "$LIB_PATH" /userdata/librknnrt.so
+adb push "$SERVER_PATH" /userdata/rknn_server
+
+echo "2. 移动文件并修复权限..."
+# 去掉了 /usr/lib64 的复制，通常 /usr/lib 就足够了
+# 如果必须复制到 lib64，建议先检查目录是否存在
+adb shell "mount -o remount,rw / && \
+           cp /userdata/librknnrt.so /usr/lib/ && \
+           cp /userdata/rknn_server /usr/bin/ && \
+           chmod +x /usr/bin/rknn_server && \
+           rm /userdata/librknnrt.so /userdata/rknn_server"
+
+echo "3. 重启 rknn_server..."
+# 先杀掉进程
+adb shell "killall -9 rknn_server 2>/dev/null"
+# 【关键修改】重定向输出到 /dev/null，防止 adb 卡死
+adb shell "nohup rknn_server >/dev/null 2>&1 &"
+
+echo "等待服务启动..."
+sleep 2
+
+echo "4. 验证版本："
+# 使用 timeout 命令，执行 1 秒后自动停止，防止卡死
+# 使用 head -n 1 只看第一行的版本号，过滤掉后面乱七八糟的日志
+adb shell "timeout 1 rknn_server -v" | head -n 1
+
+echo "=== 修复完成 ==="
