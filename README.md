@@ -184,9 +184,6 @@ Contributions are welcome! Please see our [Contribution Guidelines](CONTRIBUTING
 - New vision model integrations (YOLOv12, EfficientDet)
 - Enhanced LLM deployment techniques for edge devices
 
-## 📜 License
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
-
 ## ✨ Acknowledgements
 - Rockchip for the excellent RKNN Toolkit and MPP framework
 - Model-as-a-Service (MaaS) team for DeepSeek model optimization insights
