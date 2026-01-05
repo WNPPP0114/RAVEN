@@ -46,15 +46,21 @@ graph LR
         
         subgraph "Real-time Vision Path"
             direction LR
-            V1["MPP Decoder<br/>8-ch 1080p@30fps"] --> V2["RGA Preprocessor<br/>NV12→RGB"]
-            V2 --> V3["YOLOv11 NPU Inference<br/>60+ FPS"]
-            V3 --> V4["JSON Generator<br/>Object Detection"]
+            V1["MPP Decoder<br/>8-ch 1080p@30fps"] 
+            V2["RGA Preprocessor<br/>NV12→RGB"]
+            V3["YOLOv11 NPU Inference<br/>60+ FPS"]
+            V4["JSON Generator<br/>Object Detection"]
+            
+            V1 --> V2 --> V3 --> V4
         end
         
         subgraph "Semantic Reasoning Path"
             direction LR
-            R1["Memory Pool<br/>DRAM/NPU Shared"] --> R2["DeepSeek R1 1.5B<br/>W4A16 Quantized"]
-            R2 --> R3["Decision Engine<br/>Context Reasoning"]
+            R1["Memory Pool<br/>DRAM/NPU Shared"] 
+            R2["DeepSeek R1 1.5B<br/>W4A16 Quantized"]
+            R3["Decision Engine<br/>Context Reasoning"]
+            
+            R1 --> R2 --> R3
         end
         
         V4 -.->|"Structured JSON<br/>Every 3s"| R1
@@ -63,13 +69,20 @@ graph LR
     Cam[Camera Streams] --> V1
     R3 -->|"Action Commands<br/>Safety Alerts"| App[Application Layer]
 
-    style V1 fill:#D1E8FF,stroke:#0050B3
-    style V2 fill:#D1E8FF,stroke:#0050B3
-    style V3 fill:#FFD8BF,stroke:#D4380D
-    style V4 fill:#D1E8FF,stroke:#0050B3
-    style R1 fill:#D9F7BE,stroke:#237804
-    style R2 fill:#FFD8BF,stroke:#D4380D
-    style R3 fill:#D9F7BE,stroke:#237804
+    %% Vision Path Styling (Blue Theme)
+    style V1 fill:#D1E8FF,stroke:#0050B3,stroke-width:2px,color:#003A8C
+    style V2 fill:#D1E8FF,stroke:#0050B3,stroke-width:2px,color:#003A8C
+    style V3 fill:#FFD8BF,stroke:#D4380D,stroke-width:2px,color:#871400
+    style V4 fill:#D1E8FF,stroke:#0050B3,stroke-width:2px,color:#003A8C
+    
+    %% Reasoning Path Styling (Green Theme)
+    style R1 fill:#D9F7BE,stroke:#237804,stroke-width:2px,color:#135200
+    style R2 fill:#FFD8BF,stroke:#D4380D,stroke-width:2px,color:#871400
+    style R3 fill:#D9F7BE,stroke:#237804,stroke-width:2px,color:#135200
+    
+    %% External Elements
+    style Cam fill:#F9F9F9,stroke:#595959,stroke-width:1.5px,color:#262626
+    style App fill:#F9F9F9,stroke:#595959,stroke-width:1.5px,color:#262626
 ```
 
 ## 📊 Performance Benchmarks
