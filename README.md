@@ -1,4 +1,3 @@
-```markdown
 # ORION (Optimized Reasoning & Intelligence On Node)
 
 **Next-Gen Heterogeneous Edge AI System: Integrating Real-time Vision & LLM Reasoning on RK3588**
@@ -108,7 +107,7 @@ graph TD
 
 ### Prerequisites
 *   **Hardware**: Rockchip RK3588/RK3588S (8GB+ RAM required for LLM)
-*   **Host**: Ubuntu 22.04 LTS (Docker required)
+*   **Host**: Ubuntu 22.04 LTS (Docker required for cross-compilation)
 *   **SDK**: Rockchip Linux SDK 5.10 + RKNN Toolkit2 v2.0+
 
 ### 1. System Setup
@@ -126,7 +125,7 @@ docker run -v $(pwd):/workspace -it orion-builder
 ```bash
 # Build custom U-Boot, Kernel, and RootFS
 cd bsp
-./configure --platform=rk3588 --board=custom-board
+./configure --platform=rk3588 --board=itop-3588
 ./build.sh full_image
 ```
 
@@ -147,7 +146,7 @@ scp -r ../models user@rk3588:/opt/orion/
 # Run the ORION Daemon on device
 sudo orion_core \
   --vision_model /opt/orion/models/yolov11s.rknn \
-  --llm_model /opt/orion/models/deepseek-r1-1.5b.rknn \
+  --llm_model /opt/orion/models/deepseek-r1-1.5b_w4a16.rknn \
   --enable_zero_copy true \
   --npu_split_mode 2:1  # 2 cores for Vision, 1 core for LLM
 ```
@@ -155,24 +154,21 @@ sudo orion_core \
 ## 📂 Project Structure
 ```text
 ORION/
-├── bsp/                    # Board Support Package (Kernel/U-Boot)
-│   ├── kernel/             # Kernel config and DTS overlays
-│   └── rootfs/             # Optimized RootFS with PREEMPT_RT
+├── bsp/                    # Board Support Package (Kernel/U-Boot/DTS)
 ├── src/
-│   ├── core/               # Pipeline Scheduler & Thread Pool
-│   ├── vision/             # MPP Decoder & RGA & YOLO Post-process
+│   ├── core/               # Scheduler & Thread Pool Manager
+│   ├── vision/             # MPP Decoder, RGA Processing, YOLO Post-process
 │   ├── reasoning/          # RKLLM Inference Engine & Context Manager
-│   └── hal/                # DRM/DMA-BUF Hardware Abstraction
-├── models/                 # Pre-compiled RKNN models
-├── docker/                 # Cross-compilation environment
+│   └── hal/                # DRM/DMA-BUF Hardware Abstraction Layer
+├── models/                 # Model Conversion Scripts (ONNX -> RKNN)
 ├── tools/                  # Performance Profiling & Debug Tools
 └── docs/                   # Architecture & API References
 ```
 
 ## 🤝 Contribution
-Contributions are welcome! Please see our [Contribution Guidelines](CONTRIBUTING.md) for details. We're particularly interested in:
-- Extending support to RK3568 / RK3576.
-- Implementing support for Multi-modal LLMs (LlaVA/MiniCPM).
+Contributions are welcome! Please see our [Contribution Guidelines](CONTRIBUTING.md). We are particularly interested in:
+- Extending support to RK3568 / RK3576 platforms.
+- Implementing support for Multi-modal LLMs (LlaVA).
 - Optimizing RGA memory alignment strategies.
 
 ## ✨ Acknowledgements
@@ -181,8 +177,6 @@ Contributions are welcome! Please see our [Contribution Guidelines](CONTRIBUTING
 - **Linux Kernel Community**: For the PREEMPT_RT patchset.
 
 ---
-
-**Project Duration**: June 2025 - June 2026  
-**Maintainer**: [WNPPP0114](https://github.com/WNPPP0114)  
-**Status**: Active Development
-```
+**Project Duration**: June 2025 - June 2026
+**Hardware Platform**: Rockchip RK3588 (8GB RAM)
+**GitHub**: https://github.com/WNPPP0114/ORION
