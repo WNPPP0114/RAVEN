@@ -44,66 +44,56 @@ Current edge AI solutions often suffer from memory bottlenecks and serialized pr
 ## 🏗 Architecture
 
 ```mermaid
-## 🏗 Architecture
-
-```mermaid
 graph TD
-    %% Define Global Graph Direction
-    direction TB
-
-    %% --- External Inputs/Outputs ---
-    Cam([📷 Camera Streams]):::ext
-    App([💻 Application Layer]):::ext
-
-    %% --- Main Processing Block ---
-    subgraph System ["ORION Dual-Path System"]
+    subgraph "ORION Dual-Path Architecture"
         direction TB
         
-        %% === Path 1: High-Frequency Vision Loop ===
-        subgraph VisionPath ["⚡ Fast Loop: Visual Perception (60 FPS)"]
-            direction TB
-            V1["Stage 1: MPP Decoder<br/>(H.264/H.265 8-ch)"]:::vis
-            V2["Stage 2: RGA Pre-process<br/>(NV12→RGB Zero-Copy)"]:::vis
-            V3["Stage 3: YOLOv11 NPU<br/>(Object Detection)"]:::vis
-            V4["Stage 4: JSON Serializer<br/>(Structured Data)"]:::vis
+        Cam[Camera Streams] -->|"Raw Video Frames"| V1
+        
+        subgraph "Fast Loop: Visual Perception (60 FPS)"
+            V1["Stage 1: MPP Decoder<br/>8-ch 1080p@30fps"] 
+            V2["Stage 2: RGA Preprocessor<br/>NV12→RGB Zero-Copy"]
+            V3["Stage 3: YOLOv11 NPU Inference<br/>Object Detection"]
+            V4["Stage 4: JSON Generator<br/>Structured Scene Graph"]
             
             V1 --> V2
             V2 --> V3
             V3 --> V4
         end
-
-        %% === Path 2: Low-Frequency Reasoning Loop ===
-        subgraph LogicPath ["🧠 Slow Loop: Cognitive Reasoning (DeepSeek)"]
-            direction TB
-            R1["Stage 1: Context Memory<br/>(Shared Ring Buffer)"]:::logic
-            R2["Stage 2: DeepSeek R1 LLM<br/>(W4A16 Reasoning)"]:::logic
-            R3["Stage 3: Decision Engine<br/>(Safety & Action)"]:::logic
+        
+        V4 -.->|"Snapshot & JSON Data<br/>(Async Trigger)"| R1
+        
+        subgraph "Slow Loop: Cognitive Reasoning (14 tokens/s)"
+            R1["Stage 1: Context Window<br/>Shared DRAM Buffer"]
+            R2["Stage 2: DeepSeek R1 1.5B<br/>W4A16 Quantized LLM"]
+            R3["Stage 3: Decision Engine<br/>Logic & Safety Checks"]
             
             R1 --> R2
             R2 --> R3
         end
-
-        %% --- Internal Connections ---
-        Cam ==>|"Raw Frames (DMA-BUF)"| V1
-        V4 -.->|"Async Snapshot (Every 3s)"| R1
+        
+        R3 -->|"High-Level Commands"| App[Application Layer]
+        V4 -->|"Real-time Overlay"| App
     end
 
-    %% --- Output Connections ---
-    V4 -->|"Real-time Bounding Boxes"| App
-    R3 ==>|"High-Level Commands / Alerts"| App
-
-    %% === Styles Definition ===
-    %% 1. Vision Style (Strong Blue)
-    classDef vis fill:#D6E4FF,stroke:#0043CE,stroke-width:2px,color:#001141
+    %% --- Styling Definition ---
     
-    %% 2. Logic Style (Vibrant Green/Teal)
-    classDef logic fill:#D9F7BE,stroke:#237804,stroke-width:2px,color:#135200
+    %% Fast Loop (Blue Theme - Data Flow)
+    style V1 fill:#D1E8FF,stroke:#0050B3,stroke-width:2px,color:#003A8C
+    style V2 fill:#D1E8FF,stroke:#0050B3,stroke-width:2px,color:#003A8C
+    style V4 fill:#D1E8FF,stroke:#0050B3,stroke-width:2px,color:#003A8C
     
-    %% 3. External/Hardware Style (Neutral Grey)
-    classDef ext fill:#F0F0F0,stroke:#444444,stroke-width:2px,stroke-dasharray: 5 5,color:#000000
-
-    %% Link Styling
-    linkStyle default stroke:#666666,stroke-width:2px
+    %% Slow Loop (Green Theme - Logic Flow)
+    style R1 fill:#D9F7BE,stroke:#237804,stroke-width:2px,color:#135200
+    style R3 fill:#D9F7BE,stroke:#237804,stroke-width:2px,color:#135200
+    
+    %% Compute Cores (Orange Theme - NPU Hotspots)
+    style V3 fill:#FFD8BF,stroke:#D4380D,stroke-width:3px,color:#871400
+    style R2 fill:#FFD8BF,stroke:#D4380D,stroke-width:3px,color:#871400
+    
+    %% External Nodes (Grey)
+    style Cam fill:#F5F5F5,stroke:#595959,stroke-width:2px,color:#262626
+    style App fill:#F5F5F5,stroke:#595959,stroke-width:2px,color:#262626
 ```
 
 ## 📊 Performance Benchmarks
