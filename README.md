@@ -74,7 +74,7 @@ graph TD
             R2 --> R3
         end
         
-        subgraph "Visualization Layer(Qt6/EGL)"
+        subgraph "Visualization Layer"
             UI1["GPU Texture Mapping<br/>(EGLImage)"]
             UI2["Thought Chain Display<br/>(QML Typewriter)"]
         end
