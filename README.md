@@ -1,4 +1,4 @@
-# RK-Hetero-Vision-LLM
+# RK3588-Linux-Hetero-Vision-LLM
 
 **Embedded Linux Heterogeneous Computing Framework: Decoupled Vision & Reasoning on RK3588**
 
