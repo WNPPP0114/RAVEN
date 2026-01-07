@@ -1,6 +1,6 @@
-# ORION (Optimized Reasoning & Intelligence On Node)
+# RK-Hetero-Vision-LLM
 
-**Next-Gen Heterogeneous Edge AI System: Integrating Real-time Vision & LLM Reasoning on RK3588**
+**Embedded Linux Heterogeneous Computing Framework: Decoupled Vision & Reasoning on RK3588**
 
 [![Platform](https://img.shields.io/badge/Platform-Rockchip%20RK3588-blue?logo=linux&logoColor=white)](https://www.rock-chips.com/)
 [![OS](https://img.shields.io/badge/OS-Embedded%20Linux%20(5.10%20LTS)-green?logo=tux&logoColor=white)](https://kernel.org)
