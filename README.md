@@ -15,8 +15,8 @@ Current edge AI solutions often suffer from memory bottlenecks and serialized pr
 
 
 **Philosophy of this Project:**
-*This project is not just about porting algorithms. It explores the boundaries of Industrial AI Deployment.
-**Focused on**:
+* This project is not just about porting algorithms. It explores the boundaries of Industrial AI Deployment.
+* **Focused on**:
 * Cost-Efficiency: Running LLMs on Edge (RK3588) instead of Cloud GPUs.
 * Real-time Performance: Zero-Copy pipelines for <16ms latency.
 * Robustness: System stability under full NPU load.
