@@ -230,4 +230,4 @@ We are particularly interested in:
 ---
 **Maintainer**: WNPPP0114  
 **Hardware Platform**: Rockchip RK3588 (8GB RAM)  
-**GitHub**: https://github.com/WNPPP0114/ORION
+**GitHub**: https://github.com/WNPPP0114/RK-Linux-Hetero-Fusion
