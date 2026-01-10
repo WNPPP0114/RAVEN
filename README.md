@@ -112,7 +112,7 @@ graph TD
 
 ### Prerequisites
 *   **Hardware**: Rockchip RK3588/RK3588S (8GB+ RAM required for LLM)
-*   **Host**: Ubuntu 22.04 LTS (Docker required)
+*   **Host**: Ubuntu 20.04 LTS (Docker required)
 *   **SDK**: Rockchip Linux SDK 5.10 + RKNN Toolkit2 v2.0+
 
 ### 1. System Setup (Docker)
