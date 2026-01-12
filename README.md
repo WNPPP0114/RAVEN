@@ -131,9 +131,9 @@ docker run -v $(pwd):/workspace -it orion-builder
 ### 2. Build BSP & Firmware
 ```bash
 # Build custom U-Boot, Kernel, and RootFS
-cd bsp
+cd BSP
 ./configure --platform=rk3588 --board=itop-3588
-./build.sh full_image
+./build.sh all
 ```
 
 ### 3. Compile Core Application
