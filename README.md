@@ -11,7 +11,7 @@
 
 **RK-Linux-Hetero-Fusion** is a high-performance, heterogeneous edge AI framework engineered specifically for the Rockchip RK3588 platform. It transcends traditional "vision-only" edge systems by fusing **Real-time Object Detection (YOLO)** with **Semantic Reasoning (DeepSeek LLM)** into a unified, zero-copy pipeline.
 
-Current edge AI solutions often suffer from memory bottlenecks and serialized processing. ORION solves this by implementing a **DMA-BUF (DRM) Zero-Copy architecture**, allowing the CPU, NPU, RGA, and GPU to share memory without redundant copying. The result is a system capable of **60+ FPS visual perception**, **14 tokens/s complex logic reasoning**, and **4K UI rendering** simultaneously, enabling true "Embedded AGI" capabilities on <12W power consumption.
+Current edge AI solutions often suffer from memory bottlenecks and serialized processing. RK-Linux-Hetero-Fusion solves this by implementing a **DMA-BUF (DRM) Zero-Copy architecture**, allowing the CPU, NPU, RGA, and GPU to share memory without redundant copying. The result is a system capable of **60+ FPS visual perception**, **14 tokens/s complex logic reasoning**, and **4K UI rendering** simultaneously, enabling true "Embedded AGI" capabilities on <12W power consumption.
 
 > **Core Philosophy:**
 > *   **Cost-Efficiency:** Running LLMs on Edge (RK3588) instead of Cloud GPUs.
@@ -48,7 +48,7 @@ Current edge AI solutions often suffer from memory bottlenecks and serialized pr
 
 ```mermaid
 graph TD
-    subgraph "ORION Dual-Path Architecture"
+    subgraph "Dual-Path Architecture"
         direction TB
         
         Cam[Camera Streams] -->|"Raw Video Frames"| V1
@@ -102,9 +102,9 @@ graph TD
 | Component | Configuration | Throughput | Resource Usage | Efficiency Gain |
 | :--- | :--- | :--- | :--- | :--- |
 | **Vision Pipeline** | Baseline (Sequential) | 30 FPS | CPU: 78%, NPU: 45% | - |
-| **Vision Pipeline** | **ORION (Async + Zero-Copy)** | **62 FPS** | **CPU: 35%**, NPU: 98% | **2.0× Speed, 0.5× CPU** |
+| **Vision Pipeline** | **Hetero-Fusion (Async + Zero-Copy)** | **62 FPS** | **CPU: 35%**, NPU: 98% | **2.0× Speed, 0.5× CPU** |
 | **LLM Inference** | Single-thread | 6 tokens/s | NPU: 60% load | - |
-| **LLM Inference** | **ORION (3-Core Parallel)** | **14 tokens/s** | NPU: 99% load | **2.3× Speed** |
+| **LLM Inference** | **Hetero-Fusion (3-Core Parallel)** | **14 tokens/s** | NPU: 99% load | **2.3× Speed** |
 | **Rendering** | CPU Qt Paint | 15 FPS | CPU: 65% | - |
 | **Rendering** | **EGL DMA-BUF** | **60 FPS** | **CPU: 2%**, GPU: 15% | **Smooth UI** |
 
@@ -124,8 +124,8 @@ git clone --recursive https://github.com/WNPPP0114/RK-Linux-Hetero-Fusion.git
 cd RK-Linux-Hetero-Fusion
 
 # Initialize build environment
-docker build -t orion-builder -f docker/Dockerfile .
-docker run -v $(pwd):/workspace -it orion-builder
+docker build -t fusion-builder -f docker/Dockerfile .
+docker run -v $(pwd):/workspace -it fusion-builder
 ```
 
 ### 2. Build BSP & Firmware
@@ -149,21 +149,21 @@ make -j$(nproc)
 ### 4. Deploy & Run
 ```bash
 # Transfer artifacts to board
-scp ./orion_core user@rk3588:/usr/local/bin/
-scp -r ../models user@rk3588:/opt/orion/
+scp ./fusion_core user@rk3588:/usr/local/bin/
+scp -r ../models user@rk3588:/opt/fusion/
 
-# Run the ORION Daemon on device
+# Run the Fusion Daemon on device
 export DISPLAY=:0
-sudo orion_core \
-  --vision_model /opt/orion/models/yolov11s.rknn \
-  --llm_model /opt/orion/models/deepseek-r1-1.5b_w4a16.rknn \
+sudo fusion_core \
+  --vision_model /opt/fusion/models/yolov11s.rknn \
+  --llm_model /opt/fusion/models/deepseek-r1-1.5b_w4a16.rknn \
   --enable_gl_render true
 ```
 
 ## 📂 Project Structure
 
 ```text
-ORION/
+fusion/
 ├── 📂 bsp/                      # Board Support Package (Configs & Scripts)
 │   ├── kernel_config            # Linux 5.10 custom defconfig
 │   └── dts/                     # Device Tree Overlays
