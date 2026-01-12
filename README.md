@@ -101,7 +101,7 @@ graph TD
 
 | Component | Configuration | Throughput | Resource Usage | Efficiency Gain |
 | :--- | :--- | :--- | :--- | :--- |
-| **Vision Pipeline** | Baseline (Sequential) | 30 FPS | CPU: 78%, NPU: 45% | - |
+| **Vision Pipeline** | Baseline (Sequential) | 14 FPS | CPU: 78%, NPU: 45% | - |
 | **Vision Pipeline** | **Hetero-Fusion (Async + Zero-Copy)** | **62 FPS** | **CPU: 35%**, NPU: 98% | **2.0× Speed, 0.5× CPU** |
 | **LLM Inference** | Single-thread | 6 tokens/s | NPU: 60% load | - |
 | **LLM Inference** | **Hetero-Fusion (3-Core Parallel)** | **14 tokens/s** | NPU: 99% load | **2.3× Speed** |
